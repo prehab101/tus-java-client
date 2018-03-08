@@ -11,11 +11,12 @@ allprojects {
 
 // We compile the library using Java 1.6 compatibility
 // in order to ensure interoperability with older Android platforms.
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
     compile 'org.jetbrains:annotations:13.0'
+    compile 'org.json:json:20180130'
     testCompile 'junit:junit:4.12'
     testCompile 'org.mock-server:mockserver-netty:5.2.2'
 }
@@ -43,9 +44,9 @@ task createPom {
                 url 'http://tus.io'
 
                 scm {
-                    url 'https://github.com/tus/tus-java-client'
-                    connection 'https://github.com/tus/tus-java-client'
-                    developerConnection 'https://github.com/tus/tus-java-client'
+                    url 'https://github.com/prehab101/tus-java-client'
+                    connection 'https://github.com/prehab101/tus-java-client'
+                    developerConnection 'https://github.com/prehab101/tus-java-client'
                 }
 
                 developers {
@@ -53,6 +54,11 @@ task createPom {
                         id 'acconut'
                         name 'Marius Kleidl'
                         email 'maerious@gmail.com'
+                    }
+                    developer {
+                        id 'follower'
+                        name 'John Fonte'
+                        email 'john@fonte.com'
                     }
                 }
 

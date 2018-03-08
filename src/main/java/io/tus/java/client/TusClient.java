@@ -2,10 +2,16 @@ package io.tus.java.client;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -138,12 +144,15 @@ public class TusClient {
         connection.setRequestMethod("POST");
         prepareConnection(connection);
 
-        String encodedMetadata = upload.getEncodedMetadata();
-        if(encodedMetadata.length() > 0) {
-            connection.setRequestProperty("Upload-Metadata", encodedMetadata);
-        }
+        Map<String, String> innerObject = new HashMap<>();
+        innerObject.put("approach", "tus");
+        innerObject.put("size", Long.toString(upload.getSize()));
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("upload", innerObject);
 
-        connection.addRequestProperty("Upload-Length", Long.toString(upload.getSize()));
+		OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+		wr.write(jsonObject.toString());
+
         connection.connect();
 
         int responseCode = connection.getResponseCode();
@@ -151,15 +160,25 @@ public class TusClient {
             throw new ProtocolException("unexpected status code (" + responseCode + ") while creating upload", connection);
         }
 
-        String urlStr = connection.getHeaderField("Location");
-        if(urlStr == null || urlStr.length() == 0) {
+		String responseStr;
+
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream())))
+		{
+			responseStr = br.readLine();
+		}
+		JSONTokener tokener = new JSONTokener(responseStr);
+		JSONObject responseJSON = new JSONObject(tokener);
+
+		JSONObject uploadObject = responseJSON.getJSONObject("upload");
+		String uploadLinkString = uploadObject.getString("upload_link");
+        if(uploadLinkString == null || uploadLinkString.length() == 0) {
             throw new ProtocolException("missing upload URL in response for creating upload", connection);
         }
 
         // The upload URL must be relative to the URL of the request by which is was returned,
         // not the upload creation URL. In most cases, there is no difference between those two
         // but there may be cases in which the POST request is redirected.
-        URL uploadURL = new URL(connection.getURL(), urlStr);
+        URL uploadURL = new URL(connection.getURL(), uploadLinkString);
 
         if(resumingEnabled) {
             urlStore.set(upload.getFingerprint(), uploadURL);
@@ -255,6 +274,7 @@ public class TusClient {
         // disabled, a POST request will be transformed into a GET request which is not wanted by us.
         // See: http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/7u40-b43/sun/net/www/protocol/http/HttpURLConnection.java#2372
         connection.setInstanceFollowRedirects(Boolean.getBoolean("http.strictPostRedirect"));
+		connection.setDoOutput(true);
 
         connection.setConnectTimeout(connectTimeout);
         connection.addRequestProperty("Tus-Resumable", TUS_VERSION);

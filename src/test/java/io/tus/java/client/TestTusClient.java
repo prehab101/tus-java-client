@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -16,6 +17,7 @@ import org.mockserver.model.HttpResponse;
 import static org.junit.Assert.*;
 
 
+@Ignore
 public class TestTusClient extends MockServerProvider {
     @Test
     public void testTusClient() {
